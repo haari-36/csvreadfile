@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="96501ed3-86fd-43fa-bf52-d33eb6fed422" >
+		<file:connection workingDir="D:\harika1" />
+	</file:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="51ad25d3-1c7a-47d7-9a62-d6c165011728" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="csvreadfileFlow" doc:id="e2a7297c-46fe-42be-9747-12efdf661edf" >
+		<http:listener doc:name="Listener" doc:id="3c929017-0494-4370-a7be-7fa51e12dd28" path="/csvread" allowedMethods="POST" config-ref="HTTP_Listener_config"/>
+		<set-variable value="#[payload.directoryPath]" doc:name="Set Variable" doc:id="c96647b7-67f1-42b6-b7d6-3e601bfa1328" variableName="directoryPath"/>
+		<file:list doc:id="48a19de5-500a-4008-8c3c-9aee85de4d5c" directoryPath="#[payload.directoryPath]" config-ref="File_Config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1b5a27e6-9126-4471-9fc1-1b7970b7d224" message="#[payload]"/>
+		<set-variable value="#[payload[0].attributes.fileName]" doc:name="Set Variable" doc:id="1a63be5a-2225-4f4e-944c-22a5c263cce0" variableName="fileName"/>
+		<file:read doc:name="Read" doc:id="5d818b15-c0a5-4f58-8084-490720db38fb" path="#[vars.directoryPath ++ '/' ++ vars.fileName]"/>
+		<ee:transform doc:name="Transform Message" doc:id="1de8d4d9-ef88-44f7-8f56-28cc37df17d6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="e86f7f13-daf8-4774-abbb-6052fd18e9e7" message='#["file readsuccess"]'/>
+		<file:move doc:name="Move" doc:id="b825dae5-3f6f-4e5f-b0ac-d2e636caa412" sourcePath="#[vars.directoryPath ++ '/' ++ vars.fileName]" targetPath="#[vars.directoryPath ++ '/csvoutput']"/>
+	</flow>
+</mule>
